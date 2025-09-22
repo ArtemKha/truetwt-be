@@ -1,0 +1,226 @@
+{
+    "definition": {
+        "openapi": "3.0.0",
+        "info": {
+            "title": "TrueTweet API",
+            "version": "1.0.0",
+            "description": "A mini-blogging platform API similar to Twitter",
+            "contact": {
+                "name": "TrueTweet Team",
+                "email": "support@truetweet.com"
+            },
+            "license": {
+                "name": "MIT",
+                "url": "https://opensource.org/licenses/MIT"
+            }
+        },
+        "servers": [
+            {
+                "url": "http://localhost:3000/api",
+                "description": "Development server"
+            },
+            {
+                "url": "https://api.truetweet.com/api",
+                "description": "Production server"
+            }
+        ],
+        "components": {
+            "securitySchemes": {
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT"
+                }
+            },
+            "schemas": {
+                "User": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "description": "User ID"
+                        },
+                        "username": {
+                            "type": "string",
+                            "description": "Username"
+                        },
+                        "email": {
+                            "type": "string",
+                            "format": "email",
+                            "description": "User email"
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Account creation date"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Last update date"
+                        }
+                    }
+                },
+                "Post": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "description": "Post ID"
+                        },
+                        "userId": {
+                            "type": "integer",
+                            "description": "Author user ID"
+                        },
+                        "content": {
+                            "type": "string",
+                            "maxLength": 280,
+                            "description": "Post content"
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Post creation date"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Last update date"
+                        },
+                        "user": {
+                            "$ref": "#/components/schemas/UserSummary"
+                        },
+                        "mentions": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/UserSummary"
+                            }
+                        }
+                    }
+                },
+                "Comment": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "description": "Comment ID"
+                        },
+                        "postId": {
+                            "type": "integer",
+                            "description": "Post ID"
+                        },
+                        "userId": {
+                            "type": "integer",
+                            "description": "Author user ID"
+                        },
+                        "content": {
+                            "type": "string",
+                            "maxLength": 500,
+                            "description": "Comment content"
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Comment creation date"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Last update date"
+                        },
+                        "user": {
+                            "$ref": "#/components/schemas/UserSummary"
+                        }
+                    }
+                },
+                "UserSummary": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "username": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "Pagination": {
+                    "type": "object",
+                    "properties": {
+                        "total": {
+                            "type": "integer",
+                            "description": "Total number of items"
+                        },
+                        "page": {
+                            "type": "integer",
+                            "description": "Current page number"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Items per page"
+                        },
+                        "hasNext": {
+                            "type": "boolean",
+                            "description": "Whether there are more pages"
+                        },
+                        "hasPrev": {
+                            "type": "boolean",
+                            "description": "Whether there are previous pages"
+                        }
+                    }
+                },
+                "Error": {
+                    "type": "object",
+                    "properties": {
+                        "success": {
+                            "type": "boolean",
+                            "example": false
+                        },
+                        "error": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "string",
+                                    "description": "Error code"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error message"
+                                },
+                                "details": {
+                                    "type": "object",
+                                    "description": "Additional error details"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "tags": [
+            {
+                "name": "Authentication",
+                "description": "User authentication and authorization"
+            },
+            {
+                "name": "Users",
+                "description": "User management operations"
+            },
+            {
+                "name": "Posts",
+                "description": "Post creation and management"
+            },
+            {
+                "name": "Timeline",
+                "description": "Global timeline and caching operations"
+            },
+            {
+                "name": "Comments",
+                "description": "Comment management on posts"
+            }
+        ]
+    },
+    "apis": [
+        "./src/presentation/routes/*.ts"
+    ]
+}

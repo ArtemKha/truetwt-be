@@ -1,0 +1,66 @@
+{
+    "name": "truetweet-backend",
+    "version": "1.0.0",
+    "description": "TrueTweet - Mini-Blogging Platform Backend",
+    "main": "dist/main.js",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsx watch src/main.ts",
+        "start": "node dist/main.js",
+        "test": "vitest",
+        "test:coverage": "vitest --coverage",
+        "test:watch": "vitest --watch",
+        "migrate": "node dist/infrastructure/database/migrate.js",
+        "lint": "biome check src/",
+        "lint:fix": "biome check --apply src/",
+        "format": "biome format --write src/",
+        "docs": "swagger-jsdoc -d swaggerConfig.json -o openapi.yaml src/**/*.ts"
+    },
+    "keywords": [
+        "typescript",
+        "express",
+        "sqlite",
+        "redis",
+        "jwt",
+        "blogging"
+    ],
+    "author": "TrueTweet Team",
+    "license": "MIT",
+    "dependencies": {
+        "bcryptjs": "^3.0.2",
+        "better-sqlite3": "^12.3.0",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.2",
+        "express": "^4.21.2",
+        "express-async-errors": "^3.1.1",
+        "express-rate-limit": "^8.1.0",
+        "helmet": "^8.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "redis": "^5.8.2",
+        "sqlite3": "^5.1.6",
+        "swagger-jsdoc": "^6.2.8",
+        "swagger-ui-express": "^5.0.0",
+        "winston": "^3.11.0",
+        "zod": "^3.25.76"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.2.4",
+        "@types/bcryptjs": "^2.4.6",
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^4.17.21",
+        "@types/jsonwebtoken": "^9.0.5",
+        "@types/node": "^22.10.5",
+        "@types/supertest": "^6.0.2",
+        "@types/swagger-jsdoc": "^6.0.4",
+        "@types/swagger-ui-express": "^4.1.6",
+        "@vitest/coverage-v8": "^3.2.4",
+        "supertest": "^7.1.4",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2",
+        "vitest": "^3.2.4"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
