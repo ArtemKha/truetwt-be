@@ -1,7 +1,7 @@
 {
     "name": "truetweet-backend",
     "version": "1.0.0",
-    "description": "TrueTweet - Mini-Blogging Platform Backend",
+    "description": "TrueTweet Platform Backend",
     "main": "dist/main.js",
     "scripts": {
         "build": "tsc",

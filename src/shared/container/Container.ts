@@ -1,3 +1,10 @@
+// Port interfaces
+import { IAuthService } from '@application/ports/external/IAuthService';
+import { ICacheService } from '@application/ports/external/ICacheService';
+import { ICommentRepository } from '@application/ports/repositories/ICommentRepository';
+import { IMentionRepository } from '@application/ports/repositories/IMentionRepository';
+import { IPostRepository } from '@application/ports/repositories/IPostRepository';
+import { IUserRepository } from '@application/ports/repositories/IUserRepository';
 import { CommentService } from '@application/services/CommentService';
 import { PostService } from '@application/services/PostService';
 import { TimelineCacheService } from '@application/services/TimelineCacheService';
@@ -22,10 +29,54 @@ import { TimelineController } from '@presentation/controllers/TimelineController
 import { UserController } from '@presentation/controllers/UserController';
 import { config } from '@shared/utils/env';
 import { logger } from '@shared/utils/logger';
+import Database from 'better-sqlite3';
+
+type DependencyType =
+  // Database
+  | Database.Database
+  // Repositories
+  | IUserRepository
+  | IPostRepository
+  | ICommentRepository
+  | IMentionRepository
+  // External Services
+  | IAuthService
+  | ICacheService
+  // Application Services
+  | UserService
+  | PostService
+  | CommentService
+  | TimelineCacheService
+  // Controllers
+  | AuthController
+  | UserController
+  | PostController
+  | TimelineController
+  | CommentController;
+
+// Dependency key mapping for type safety
+interface DependencyMap {
+  database: Database.Database;
+  userRepository: IUserRepository;
+  postRepository: IPostRepository;
+  commentRepository: ICommentRepository;
+  mentionRepository: IMentionRepository;
+  authService: IAuthService;
+  cacheService: ICacheService;
+  userService: UserService;
+  postService: PostService;
+  commentService: CommentService;
+  timelineCacheService: TimelineCacheService;
+  authController: AuthController;
+  userController: UserController;
+  postController: PostController;
+  timelineController: TimelineController;
+  commentController: CommentController;
+}
 
 export class Container {
   private static instance: Container;
-  private dependencies: Map<string, any> = new Map();
+  private dependencies: Map<string, DependencyType> = new Map();
   private initialized = false;
 
   private constructor() {}
@@ -88,16 +139,17 @@ export class Container {
     this.dependencies.set('authService', authService);
 
     // Cache service
-    let cacheService;
+    let cacheService: ICacheService;
 
     try {
       // Try to initialize Redis cache
-      cacheService = new RedisCacheService(
+      const redisCacheService = new RedisCacheService(
         config.REDIS_URL,
         config.REDIS_PASSWORD,
         config.REDIS_DB
       );
-      await cacheService.connect();
+      await redisCacheService.connect();
+      cacheService = redisCacheService;
       logger.info('Redis cache service initialized');
     } catch (error) {
       logger.warn('Failed to connect to Redis, falling back to in-memory cache', { error });
@@ -108,7 +160,7 @@ export class Container {
   }
 
   private initializeRepositories(): void {
-    const database = this.dependencies.get('database');
+    const database = this.dependencies.get('database') as Database.Database;
 
     const userRepository = new SQLiteUserRepository(database);
     const postRepository = new SQLitePostRepository(database);
@@ -124,12 +176,12 @@ export class Container {
   }
 
   private initializeApplicationServices(): void {
-    const userRepository = this.dependencies.get('userRepository');
-    const postRepository = this.dependencies.get('postRepository');
-    const commentRepository = this.dependencies.get('commentRepository');
-    const mentionRepository = this.dependencies.get('mentionRepository');
-    const authService = this.dependencies.get('authService');
-    const cacheService = this.dependencies.get('cacheService');
+    const userRepository = this.dependencies.get('userRepository') as IUserRepository;
+    const postRepository = this.dependencies.get('postRepository') as IPostRepository;
+    const commentRepository = this.dependencies.get('commentRepository') as ICommentRepository;
+    const mentionRepository = this.dependencies.get('mentionRepository') as IMentionRepository;
+    const authService = this.dependencies.get('authService') as IAuthService;
+    const cacheService = this.dependencies.get('cacheService') as ICacheService;
 
     const userService = new UserService(userRepository, authService);
     const postService = new PostService(
@@ -150,10 +202,12 @@ export class Container {
   }
 
   private initializeControllers(): void {
-    const userService = this.dependencies.get('userService');
-    const postService = this.dependencies.get('postService');
-    const commentService = this.dependencies.get('commentService');
-    const timelineCacheService = this.dependencies.get('timelineCacheService');
+    const userService = this.dependencies.get('userService') as UserService;
+    const postService = this.dependencies.get('postService') as PostService;
+    const commentService = this.dependencies.get('commentService') as CommentService;
+    const timelineCacheService = this.dependencies.get(
+      'timelineCacheService'
+    ) as TimelineCacheService;
 
     const authController = new AuthController(userService);
     const userController = new UserController(userService);
@@ -170,7 +224,7 @@ export class Container {
     logger.info('Controllers initialized');
   }
 
-  get<T>(key: string): T {
+  get<K extends keyof DependencyMap>(key: K): DependencyMap[K] {
     if (!this.initialized) {
       throw new Error('Container not initialized. Call initialize() first.');
     }
@@ -180,16 +234,16 @@ export class Container {
       throw new Error(`Dependency '${key}' not found in container`);
     }
 
-    return dependency;
+    return dependency as DependencyMap[K];
   }
 
   async cleanup(): Promise<void> {
     logger.info('Cleaning up dependencies...');
 
     try {
-      // Close cache connection
-      const cacheService = this.dependencies.get('cacheService');
-      if (cacheService && typeof cacheService.disconnect === 'function') {
+      // Close cache connection if it's Redis (has disconnect method)
+      const cacheService = this.dependencies.get('cacheService') as ICacheService;
+      if (cacheService instanceof RedisCacheService) {
         await cacheService.disconnect();
       }
 

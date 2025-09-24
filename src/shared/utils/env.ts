@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/useNamingConvention: allow uppercase for environment variables */
 import dotenv from 'dotenv';
 import { z } from 'zod';
 

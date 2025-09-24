@@ -1,3 +1,4 @@
+// biome-ignore lint/complexity/noStaticOnlyClass: allow for utility class
 export class ContentValidation {
   private static readonly MAX_POST_LENGTH = 280;
   private static readonly MAX_COMMENT_LENGTH = 500;
