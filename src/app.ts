@@ -74,7 +74,7 @@ export async function createApp(): Promise<Application> {
         info: {
           title: 'TrueTweet API',
           version: '1.0.0',
-          description: 'A mini-blogging platform API similar to Twitter',
+          description: 'A mini-blogging platform API',
           contact: {
             name: 'TrueTweet Team',
             email: 'support@truetweet.com',

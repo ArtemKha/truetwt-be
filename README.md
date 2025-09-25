@@ -15,7 +15,7 @@ A mini-blogging platform backend built with TypeScript, Express.js, SQLite, and 
 
 ## Architecture
 
-This project follows **Hexagonal Architecture** (Ports & Adapters) pattern:
+This project follows **Clean Architecture**:
 
 ```
 src/
@@ -26,24 +26,13 @@ src/
 └── shared/               # Common utilities and configuration
 ```
 
-## Tech Stack
-
-- **Runtime**: Node.js 18+ with TypeScript
-- **Framework**: Express.js
-- **Database**: SQLite with better-sqlite3
-- **Cache**: Redis (with in-memory fallback)
-- **Authentication**: JWT with bcrypt
-- **Validation**: Zod
-- **Documentation**: Swagger UI
-- **Testing**: Vitest
-- **Code Quality**: Biome
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or pnpm
+- Node.js (tested with v22.18.0)
+- npm
 - Redis (optional - falls back to in-memory cache)
 
 ### Development Setup
