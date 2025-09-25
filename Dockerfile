@@ -39,6 +39,7 @@ COPY --from=base --chown=truetweet:nodejs /app/node_modules ./node_modules
 # Copy built application
 COPY --from=builder --chown=truetweet:nodejs /app/dist ./dist
 COPY --from=builder --chown=truetweet:nodejs /app/package*.json ./
+COPY --from=builder --chown=truetweet:nodejs /app/src/infrastructure/database/schema.sql ./schema.sql
 
 # Create necessary directories
 RUN mkdir -p logs data && chown -R truetweet:nodejs logs data

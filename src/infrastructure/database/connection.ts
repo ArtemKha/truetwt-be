@@ -54,10 +54,39 @@ export class DatabaseConnection {
 
   private initializeSchema(): void {
     try {
-      const schemaPath = join(__dirname, 'schema.sql');
-      const schema = readFileSync(schemaPath, 'utf-8');
+      // Try to find schema.sql in multiple locations for dev/prod compatibility
+      const possiblePaths = [
+        // Development: source directory
+        join(process.cwd(), 'src', 'infrastructure', 'database', 'schema.sql'),
+        // Production: dist directory (if copied)
+        join(process.cwd(), 'dist', 'infrastructure', 'database', 'schema.sql'),
+        // Docker/Production: root level
+        join(process.cwd(), 'schema.sql'),
+        // Alternative: check if we're running from dist
+        join(__dirname, 'schema.sql'),
+      ];
+
+      let schema: string = '';
+      let usedPath: string | null = null;
+
+      for (const schemaPath of possiblePaths) {
+        try {
+          if (existsSync(schemaPath)) {
+            schema = readFileSync(schemaPath, 'utf-8');
+            usedPath = schemaPath;
+            break;
+          }
+        } catch {}
+      }
+
+      if (!usedPath || !schema) {
+        throw new Error(
+          `Schema file not found in any of the expected locations: ${possiblePaths.join(', ')}`
+        );
+      }
+
       this.db.exec(schema);
-      logger.info('Database schema initialized successfully');
+      logger.info('Database schema initialized successfully', { schemaPath: usedPath });
     } catch (error) {
       logger.error('Failed to initialize database schema', { error });
       throw error;
