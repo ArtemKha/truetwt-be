@@ -1,7 +1,7 @@
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { logger } from '@shared/utils/logger';
 import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 export class DatabaseConnection {
   private static instance: DatabaseConnection;
@@ -9,6 +9,10 @@ export class DatabaseConnection {
 
   private constructor(databasePath: string, isMemory = false) {
     try {
+      if (!isMemory) {
+        this.ensureDatabaseDirectoryExists(databasePath);
+      }
+
       this.db = new Database(isMemory ? ':memory:' : databasePath);
       this.db.pragma('journal_mode = WAL');
       this.db.pragma('foreign_keys = ON');
@@ -32,6 +36,20 @@ export class DatabaseConnection {
 
   public getDatabase(): Database.Database {
     return this.db;
+  }
+
+  private ensureDatabaseDirectoryExists(databasePath: string): void {
+    try {
+      const directory = dirname(databasePath);
+
+      if (!existsSync(directory)) {
+        mkdirSync(directory, { recursive: true });
+        logger.info('Created database directory', { directory });
+      }
+    } catch (error) {
+      logger.error('Failed to create database directory', { error, path: databasePath });
+      throw error;
+    }
   }
 
   private initializeSchema(): void {
