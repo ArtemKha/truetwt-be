@@ -7,7 +7,11 @@ import swaggerUi from 'swagger-ui-express';
 import 'express-async-errors';
 
 // Middleware
-import { errorHandler, notFoundHandler } from '@presentation/middleware/error.middleware';
+import {
+  errorHandler,
+  notFoundHandler,
+  requestLogger,
+} from '@presentation/middleware/error.middleware';
 // Routes
 import { createRoutes, RoutesDependencies } from '@presentation/routes';
 import { Container } from '@shared/container/Container';
@@ -55,16 +59,8 @@ export async function createApp(): Promise<Application> {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Request logging
-  app.use((req, _res, next) => {
-    logger.info('Incoming request', {
-      method: req.method,
-      url: req.url,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-    });
-    next();
-  });
+  // Request logging with enhanced formatting
+  app.use(requestLogger);
 
   // Swagger documentation
   if (config.NODE_ENV !== 'production') {

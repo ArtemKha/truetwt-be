@@ -24,7 +24,7 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
   LOG_LEVEL: z.string().default('info'),
-  LOG_FORMAT: z.enum(['json', 'simple']).default('json'),
+  LOG_FORMAT: z.enum(['json', 'simple', 'pretty']).default('json'),
   CACHE_TTL: z.string().transform(Number).default('3600'),
   TIMELINE_CACHE_SIZE: z.string().transform(Number).default('1000'),
 });
