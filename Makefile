@@ -26,6 +26,11 @@ help:
 	@echo "  docker-stop Stop Docker containers"
 	@echo "  docker-clean Clean Docker resources"
 	@echo ""
+	@echo "Database:"
+	@echo "  migrate     Run database migrations"
+	@echo "  seed        Seed database with sample data"
+	@echo "  db-reset    Reset database (delete SQLite file)"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  clean       Clean build artifacts"
 	@echo "  logs        View application logs"
@@ -106,6 +111,12 @@ setup: install
 	@echo "Setup complete! Run 'make dev' to start development server"
 
 # Database operations
+migrate:
+	npm run migrate
+
+seed:
+	npm run seed
+
 db-reset:
 	@echo "Resetting database..."
 	@rm -f data/database.sqlite

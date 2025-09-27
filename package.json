@@ -11,6 +11,8 @@
         "test:coverage": "vitest --coverage",
         "test:watch": "vitest --watch",
         "migrate": "node dist/infrastructure/database/migrate.js",
+        "seed": "tsx src/scripts/seed.ts",
+        "seed:build": "npm run build && node dist/scripts/seed.js",
         "lint": "biome check src/",
         "lint:fix": "biome check --apply src/",
         "format": "biome format --write src/",
