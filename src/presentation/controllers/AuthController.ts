@@ -23,9 +23,9 @@ export class AuthController {
   }
 
   async login(req: Request, res: Response) {
-    const { usernameOrEmail, password }: LoginRequest = req.body;
+    const { username, password }: LoginRequest = req.body;
 
-    const result = await this.userService.login(usernameOrEmail, password);
+    const result = await this.userService.login(username, password);
 
     logger.info('User login successful', { userId: result.user.id });
 

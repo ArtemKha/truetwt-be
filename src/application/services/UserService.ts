@@ -64,21 +64,15 @@ export class UserService {
   }
 
   async login(
-    usernameOrEmail: string,
+    username: string,
     password: string
   ): Promise<{ user: UserProfile; tokens: { accessToken: string; refreshToken: string } }> {
-    if (!usernameOrEmail || !password) {
-      throw new ValidationError('Username/email and password are required');
+    if (!username || !password) {
+      throw new ValidationError('Username and password are required');
     }
 
-    // Find user by username or email
-    let user: User | null = null;
-
-    if (usernameOrEmail.includes('@')) {
-      user = await this.userRepository.findByEmail(usernameOrEmail);
-    } else {
-      user = await this.userRepository.findByUsername(usernameOrEmail);
-    }
+    // Find user by username
+    const user = await this.userRepository.findByUsername(username);
 
     if (!user) {
       throw new UnauthorizedError('Invalid credentials');

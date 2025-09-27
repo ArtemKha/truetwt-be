@@ -68,10 +68,10 @@ export function createAuthRoutes(
    *           schema:
    *             type: object
    *             required:
-   *               - usernameOrEmail
+   *               - username
    *               - password
    *             properties:
-   *               usernameOrEmail:
+   *               username:
    *                 type: string
    *               password:
    *                 type: string

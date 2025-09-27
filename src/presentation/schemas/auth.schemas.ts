@@ -35,10 +35,10 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  usernameOrEmail: z
+  username: z
     .string()
-    .min(1, 'Username or email is required')
-    .max(255, 'Username or email cannot exceed 255 characters')
+    .min(1, 'Username is required')
+    .max(50, 'Username cannot exceed 50 characters')
     .transform((val) => val.trim().toLowerCase()),
   password: z.string().min(1, 'Password is required'),
 });

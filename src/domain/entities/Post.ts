@@ -24,6 +24,7 @@ export interface PostWithUserAndMentions extends PostWithUser {
 
 export interface TimelinePost {
   id: number;
+  // TODO: refactor to use same type User object as in other entities
   userId: number;
   username: string;
   content: string;
