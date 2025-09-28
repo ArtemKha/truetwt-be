@@ -2,14 +2,8 @@ import { ICacheService } from '@application/ports/external/ICacheService';
 import { IMentionRepository } from '@application/ports/repositories/IMentionRepository';
 import { IPostRepository } from '@application/ports/repositories/IPostRepository';
 import { IUserRepository } from '@application/ports/repositories/IUserRepository';
-import {
-  CreatePostData,
-  PaginatedPosts,
-  Post,
-  PostWithUserAndMentions,
-  TimelinePost,
-} from '@domain/entities/Post';
-import { ForbiddenError, NotFoundError, ValidationError } from '@domain/errors/DomainError';
+import { PaginatedPosts, PostWithUserAndMentions, TimelinePost } from '@domain/entities/Post';
+import { ForbiddenError, NotFoundError } from '@domain/errors/DomainError';
 import { ContentValidation } from '@domain/value-objects/ContentValidation';
 import { Pagination } from '@domain/value-objects/Pagination';
 import { logger } from '@shared/utils/logger';
@@ -35,21 +29,39 @@ export class PostService {
     // Create post
     const post = await this.postRepository.create({ userId, content });
 
-    // Extract and process mentions
+    // Extract and process mentions efficiently with batch operations
     const mentionUsernames = ContentValidation.extractMentions(content);
     const mentions = [];
 
     if (mentionUsernames.length > 0) {
-      for (const username of mentionUsernames) {
-        const mentionedUser = await this.userRepository.findByUsername(username);
-        if (mentionedUser) {
-          mentions.push({ id: mentionedUser.id, username: mentionedUser.username });
-          // Create mention record
-          await this.mentionRepository.create({
-            postId: post.id,
-            mentionedUserId: mentionedUser.id,
-          });
-        }
+      logger.debug('Processing mentions with batch lookup', {
+        mentionCount: mentionUsernames.length,
+        usernames: mentionUsernames,
+      });
+
+      // Batch lookup all mentioned users in a single query (prevents N+1 queries)
+      const mentionedUsers = await this.userRepository.findByUsernames(mentionUsernames);
+
+      if (mentionedUsers.length > 0) {
+        // Prepare mentions for response
+        mentions.push(...mentionedUsers);
+
+        // Batch create mention records (single transaction)
+        const mentionData = mentionedUsers.map((user) => ({
+          postId: post.id,
+          mentionedUserId: user.id,
+        }));
+
+        await this.mentionRepository.createBatch(mentionData);
+
+        logger.debug('Mentions processed successfully', {
+          foundUsers: mentionedUsers.length,
+          requestedUsers: mentionUsernames.length,
+        });
+      } else {
+        logger.debug('No valid users found for mentions', {
+          requestedUsernames: mentionUsernames,
+        });
       }
     }
 

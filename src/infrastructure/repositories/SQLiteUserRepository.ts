@@ -1,5 +1,11 @@
 import { IUserRepository } from '@application/ports/repositories/IUserRepository';
-import { CreateUserData, UpdateUserData, User, UserProfile } from '@domain/entities/User';
+import {
+  CreateUserData,
+  UpdateUserData,
+  User,
+  UserProfile,
+  UserSummary,
+} from '@domain/entities/User';
 import { ConflictError, NotFoundError } from '@domain/errors/DomainError';
 import { Pagination, PaginationResult } from '@domain/value-objects/Pagination';
 import Database from 'better-sqlite3';
@@ -8,6 +14,7 @@ import {
   convertDbRowToDate,
   DatabaseRunResult,
   isCountResult,
+  isMentionUserDbRow,
   isUserDbRow,
   UserDbRow,
 } from '../database/types';
@@ -42,8 +49,8 @@ export class SQLiteUserRepository implements IUserRepository {
         createdAt: convertDbRowToDate(userRow.created_at),
         updatedAt: convertDbRowToDate(userRow.updated_at),
       };
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new ConflictError('Username or email already exists');
       }
       throw error;
@@ -145,8 +152,8 @@ export class SQLiteUserRepository implements IUserRepository {
       }
 
       return updatedUser;
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new ConflictError('Username or email already exists');
       }
       throw error;
@@ -219,13 +226,73 @@ export class SQLiteUserRepository implements IUserRepository {
 
   async exists(username: string, email: string): Promise<boolean> {
     const query = 'SELECT COUNT(*) as count FROM users WHERE username = ? OR email = ?';
-    const result = this.db.prepare(query).get(username, email) as any;
+    const result = this.db.prepare(query).get(username, email);
+
+    if (!isCountResult(result)) {
+      throw new Error('Invalid count result from database');
+    }
+
     return result.count > 0;
   }
 
   async count(): Promise<number> {
     const query = 'SELECT COUNT(*) as count FROM users';
-    const result = this.db.prepare(query).get() as any;
+    const result = this.db.prepare(query).get();
+
+    if (!isCountResult(result)) {
+      throw new Error('Invalid count result from database');
+    }
+
     return result.count;
+  }
+
+  async findByUsernames(usernames: string[]): Promise<UserSummary[]> {
+    if (usernames.length === 0) return [];
+
+    // Remove duplicates and filter out empty strings
+    const uniqueUsernames = [
+      ...new Set(usernames.filter((username) => username.trim().length > 0)),
+    ];
+
+    if (uniqueUsernames.length === 0) return [];
+
+    const placeholders = uniqueUsernames.map(() => '?').join(',');
+    const query = `SELECT id, username FROM users WHERE username IN (${placeholders})`;
+
+    const userRows = this.db.prepare(query).all(...uniqueUsernames);
+
+    return userRows.map((row) => {
+      if (!isMentionUserDbRow(row)) {
+        throw new Error('Invalid user summary data retrieved from database');
+      }
+      return {
+        id: row.id,
+        username: row.username,
+      };
+    });
+  }
+
+  async findByIds(ids: number[]): Promise<UserSummary[]> {
+    if (ids.length === 0) return [];
+
+    // Remove duplicates and filter out invalid IDs
+    const uniqueIds = [...new Set(ids.filter((id) => Number.isInteger(id) && id > 0))];
+
+    if (uniqueIds.length === 0) return [];
+
+    const placeholders = uniqueIds.map(() => '?').join(',');
+    const query = `SELECT id, username FROM users WHERE id IN (${placeholders})`;
+
+    const userRows = this.db.prepare(query).all(...uniqueIds);
+
+    return userRows.map((row) => {
+      if (!isMentionUserDbRow(row)) {
+        throw new Error('Invalid user summary data retrieved from database');
+      }
+      return {
+        id: row.id,
+        username: row.username,
+      };
+    });
   }
 }

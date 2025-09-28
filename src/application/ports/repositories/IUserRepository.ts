@@ -1,4 +1,10 @@
-import { CreateUserData, UpdateUserData, User, UserProfile } from '@domain/entities/User';
+import {
+  CreateUserData,
+  UpdateUserData,
+  User,
+  UserProfile,
+  UserSummary,
+} from '@domain/entities/User';
 import { Pagination, PaginationResult } from '@domain/value-objects/Pagination';
 
 export interface IUserRepository {
@@ -11,4 +17,8 @@ export interface IUserRepository {
   findAll(pagination: Pagination): Promise<{ users: UserProfile[]; pagination: PaginationResult }>;
   exists(username: string, email: string): Promise<boolean>;
   count(): Promise<number>;
+
+  // Batch operations for performance optimization
+  findByUsernames(usernames: string[]): Promise<UserSummary[]>;
+  findByIds(ids: number[]): Promise<UserSummary[]>;
 }
