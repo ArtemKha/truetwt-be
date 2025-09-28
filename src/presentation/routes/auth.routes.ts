@@ -39,8 +39,10 @@ export function createAuthRoutes(
    *                 format: email
    *               password:
    *                 type: string
-   *                 minLength: 6
+   *                 minLength: 8
    *                 maxLength: 128
+   *                 pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]'
+   *                 description: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'
    *     responses:
    *       201:
    *         description: User registered successfully

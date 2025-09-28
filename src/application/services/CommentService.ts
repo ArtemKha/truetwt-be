@@ -1,17 +1,13 @@
 import { ICommentRepository } from '@application/ports/repositories/ICommentRepository';
 import { IPostRepository } from '@application/ports/repositories/IPostRepository';
 import { IUserRepository } from '@application/ports/repositories/IUserRepository';
-import {
-  Comment,
-  CommentWithUser,
-  CreateCommentData,
-  PaginatedComments,
-} from '@domain/entities/Comment';
-import { ForbiddenError, NotFoundError, ValidationError } from '@domain/errors/DomainError';
+import { CommentWithUser, PaginatedComments } from '@domain/entities/Comment';
+import { ForbiddenError, NotFoundError } from '@domain/errors/DomainError';
 import { ContentValidation } from '@domain/value-objects/ContentValidation';
 import { Pagination } from '@domain/value-objects/Pagination';
 import { logger } from '@shared/utils/logger';
 
+// TODO: Add mentions
 export class CommentService {
   constructor(
     private commentRepository: ICommentRepository,

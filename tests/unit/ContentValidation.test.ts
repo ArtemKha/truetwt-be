@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { ContentValidation } from '@domain/value-objects/ContentValidation';
+import { describe, expect, it } from 'vitest';
+import { ContentValidation } from '../../src/domain/value-objects/ContentValidation';
 
 describe('ContentValidation', () => {
   describe('validatePostContent', () => {
@@ -8,13 +8,19 @@ describe('ContentValidation', () => {
     });
 
     it('should reject empty content', () => {
-      expect(() => ContentValidation.validatePostContent('')).toThrow('Post content cannot be empty');
-      expect(() => ContentValidation.validatePostContent('   ')).toThrow('Post content cannot be empty');
+      expect(() => ContentValidation.validatePostContent('')).toThrow(
+        'Post content cannot be empty'
+      );
+      expect(() => ContentValidation.validatePostContent('   ')).toThrow(
+        'Post content cannot be empty'
+      );
     });
 
     it('should reject content exceeding 280 characters', () => {
       const longContent = 'a'.repeat(281);
-      expect(() => ContentValidation.validatePostContent(longContent)).toThrow('Post content cannot exceed 280 characters');
+      expect(() => ContentValidation.validatePostContent(longContent)).toThrow(
+        'Post content cannot exceed 280 characters'
+      );
     });
 
     it('should accept content at exactly 280 characters', () => {
@@ -29,12 +35,16 @@ describe('ContentValidation', () => {
     });
 
     it('should reject empty content', () => {
-      expect(() => ContentValidation.validateCommentContent('')).toThrow('Comment content cannot be empty');
+      expect(() => ContentValidation.validateCommentContent('')).toThrow(
+        'Comment content cannot be empty'
+      );
     });
 
     it('should reject content exceeding 500 characters', () => {
       const longContent = 'a'.repeat(501);
-      expect(() => ContentValidation.validateCommentContent(longContent)).toThrow('Comment content cannot exceed 500 characters');
+      expect(() => ContentValidation.validateCommentContent(longContent)).toThrow(
+        'Comment content cannot exceed 500 characters'
+      );
     });
   });
 
@@ -73,18 +83,28 @@ describe('ContentValidation', () => {
     });
 
     it('should reject short usernames', () => {
-      expect(() => ContentValidation.validateUsername('ab')).toThrow('Username must be between 3 and 50 characters');
+      expect(() => ContentValidation.validateUsername('ab')).toThrow(
+        'Username must be between 3 and 50 characters'
+      );
     });
 
     it('should reject long usernames', () => {
       const longUsername = 'a'.repeat(51);
-      expect(() => ContentValidation.validateUsername(longUsername)).toThrow('Username must be between 3 and 50 characters');
+      expect(() => ContentValidation.validateUsername(longUsername)).toThrow(
+        'Username must be between 3 and 50 characters'
+      );
     });
 
     it('should reject usernames with invalid characters', () => {
-      expect(() => ContentValidation.validateUsername('user-name')).toThrow('Username can only contain letters, numbers, and underscores');
-      expect(() => ContentValidation.validateUsername('user.name')).toThrow('Username can only contain letters, numbers, and underscores');
-      expect(() => ContentValidation.validateUsername('user@name')).toThrow('Username can only contain letters, numbers, and underscores');
+      expect(() => ContentValidation.validateUsername('user-name')).toThrow(
+        'Username can only contain letters, numbers, and underscores'
+      );
+      expect(() => ContentValidation.validateUsername('user.name')).toThrow(
+        'Username can only contain letters, numbers, and underscores'
+      );
+      expect(() => ContentValidation.validateUsername('user@name')).toThrow(
+        'Username can only contain letters, numbers, and underscores'
+      );
     });
 
     it('should reject empty usernames', () => {
@@ -100,7 +120,9 @@ describe('ContentValidation', () => {
     });
 
     it('should reject invalid emails', () => {
-      expect(() => ContentValidation.validateEmail('invalid-email')).toThrow('Invalid email format');
+      expect(() => ContentValidation.validateEmail('invalid-email')).toThrow(
+        'Invalid email format'
+      );
       expect(() => ContentValidation.validateEmail('user@')).toThrow('Invalid email format');
       expect(() => ContentValidation.validateEmail('@example.com')).toThrow('Invalid email format');
     });
@@ -112,21 +134,59 @@ describe('ContentValidation', () => {
 
   describe('validatePassword', () => {
     it('should accept valid passwords', () => {
-      expect(() => ContentValidation.validatePassword('password123')).not.toThrow();
-      expect(() => ContentValidation.validatePassword('mySecureP@ssw0rd!')).not.toThrow();
+      expect(() => ContentValidation.validatePassword('MySecure123!')).not.toThrow();
+      expect(() => ContentValidation.validatePassword('Password@123')).not.toThrow();
+      expect(() => ContentValidation.validatePassword('Complex$Pass1')).not.toThrow();
     });
 
     it('should reject short passwords', () => {
-      expect(() => ContentValidation.validatePassword('12345')).toThrow('Password must be at least 6 characters long');
+      expect(() => ContentValidation.validatePassword('Abc1@')).toThrow(
+        'Password must be at least 8 characters long'
+      );
+      expect(() => ContentValidation.validatePassword('1234567')).toThrow(
+        'Password must be at least 8 characters long'
+      );
+    });
+
+    it('should reject passwords without lowercase letters', () => {
+      expect(() => ContentValidation.validatePassword('PASSWORD123!')).toThrow(
+        'Password must contain at least one lowercase letter'
+      );
+    });
+
+    it('should reject passwords without uppercase letters', () => {
+      expect(() => ContentValidation.validatePassword('password123!')).toThrow(
+        'Password must contain at least one uppercase letter'
+      );
+    });
+
+    it('should reject passwords without numbers', () => {
+      expect(() => ContentValidation.validatePassword('Password!')).toThrow(
+        'Password must contain at least one number'
+      );
+    });
+
+    it('should reject passwords without special characters', () => {
+      expect(() => ContentValidation.validatePassword('Password123')).toThrow(
+        'Password must contain at least one special character (@$!%*?&)'
+      );
     });
 
     it('should reject very long passwords', () => {
-      const longPassword = 'a'.repeat(129);
-      expect(() => ContentValidation.validatePassword(longPassword)).toThrow('Password cannot exceed 128 characters');
+      const longPassword = 'A'.repeat(125) + 'a1@' + 'b'; // 129 characters total
+      expect(() => ContentValidation.validatePassword(longPassword)).toThrow(
+        'Password cannot exceed 128 characters'
+      );
     });
 
     it('should reject empty passwords', () => {
       expect(() => ContentValidation.validatePassword('')).toThrow('Password cannot be empty');
+      expect(() => ContentValidation.validatePassword('   ')).toThrow('Password cannot be empty');
+    });
+
+    it('should accept password at exactly 128 characters', () => {
+      const exactPassword = 'A'.repeat(124) + 'a1@' + 'b'; // 128 characters total
+      expect(() => ContentValidation.validatePassword(exactPassword)).not.toThrow();
     });
   });
 });

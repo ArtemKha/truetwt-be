@@ -55,14 +55,33 @@ export class ContentValidation {
   }
 
   public static validatePassword(password: string): void {
-    if (!password || password.length === 0) {
+    if (!password || password.trim().length === 0) {
       throw new Error('Password cannot be empty');
     }
-    if (password.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
     }
     if (password.length > 128) {
       throw new Error('Password cannot exceed 128 characters');
+    }
+
+    // Check for required character types
+    const hasLowercase = /[a-z]/.test(password);
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[@$!%*?&]/.test(password);
+
+    if (!hasLowercase) {
+      throw new Error('Password must contain at least one lowercase letter');
+    }
+    if (!hasUppercase) {
+      throw new Error('Password must contain at least one uppercase letter');
+    }
+    if (!hasNumber) {
+      throw new Error('Password must contain at least one number');
+    }
+    if (!hasSpecialChar) {
+      throw new Error('Password must contain at least one special character (@$!%*?&)');
     }
   }
 }
