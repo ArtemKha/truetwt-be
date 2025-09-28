@@ -27,6 +27,20 @@ describe('ContentValidation', () => {
       const exactContent = 'a'.repeat(280);
       expect(() => ContentValidation.validatePostContent(exactContent)).not.toThrow();
     });
+
+    it('should reject posts with too many mentions', () => {
+      const tooManyMentions = Array.from({ length: 11 }, (_, i) => `@user${i + 1}`).join(' ');
+      const content = `Hello ${tooManyMentions}!`;
+      expect(() => ContentValidation.validatePostContent(content)).toThrow(
+        'Post cannot contain more than 10 mentions'
+      );
+    });
+
+    it('should accept posts with exactly 10 mentions', () => {
+      const exactMentions = Array.from({ length: 10 }, (_, i) => `@user${i + 1}`).join(' ');
+      const content = `Hello ${exactMentions}!`;
+      expect(() => ContentValidation.validatePostContent(content)).not.toThrow();
+    });
   });
 
   describe('validateCommentContent', () => {
@@ -72,6 +86,45 @@ describe('ContentValidation', () => {
     it('should extract mentions with underscores and numbers', () => {
       const mentions = ContentValidation.extractMentions('Hello @user_123 and @test2user!');
       expect(mentions).toEqual(['user_123', 'test2user']);
+    });
+  });
+
+  describe('validateMentions', () => {
+    it('should accept posts with no mentions', () => {
+      expect(() => ContentValidation.validateMentions('Hello world!')).not.toThrow();
+    });
+
+    it('should accept posts with few mentions', () => {
+      expect(() => ContentValidation.validateMentions('Hello @user1 and @user2!')).not.toThrow();
+    });
+
+    it('should accept posts with exactly 10 mentions', () => {
+      const exactMentions = Array.from({ length: 10 }, (_, i) => `@user${i + 1}`).join(' ');
+      const content = `Hello ${exactMentions}!`;
+      expect(() => ContentValidation.validateMentions(content)).not.toThrow();
+    });
+
+    it('should reject posts with more than 10 mentions', () => {
+      const tooManyMentions = Array.from({ length: 11 }, (_, i) => `@user${i + 1}`).join(' ');
+      const content = `Hello ${tooManyMentions}!`;
+      expect(() => ContentValidation.validateMentions(content)).toThrow(
+        'Post cannot contain more than 10 mentions'
+      );
+    });
+
+    it('should handle duplicate mentions correctly', () => {
+      // 11 @user1 mentions, but only counts as 1 unique mention
+      const duplicateMentions = Array.from({ length: 11 }, () => '@user1').join(' ');
+      const content = `Hello ${duplicateMentions}!`;
+      expect(() => ContentValidation.validateMentions(content)).not.toThrow();
+    });
+
+    it('should reject posts with 11 unique mentions', () => {
+      const uniqueMentions = Array.from({ length: 11 }, (_, i) => `@user${i + 1}`).join(' ');
+      const content = `Hello ${uniqueMentions}!`;
+      expect(() => ContentValidation.validateMentions(content)).toThrow(
+        'Post cannot contain more than 10 mentions'
+      );
     });
   });
 

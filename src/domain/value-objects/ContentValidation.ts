@@ -2,6 +2,7 @@
 export class ContentValidation {
   private static readonly MAX_POST_LENGTH = 280;
   private static readonly MAX_COMMENT_LENGTH = 500;
+  private static readonly MAX_MENTIONS_PER_POST = 10;
   private static readonly USERNAME_REGEX = /@[a-zA-Z0-9_]+/g;
 
   public static validatePostContent(content: string): void {
@@ -11,6 +12,9 @@ export class ContentValidation {
     if (content.length > ContentValidation.MAX_POST_LENGTH) {
       throw new Error(`Post content cannot exceed ${ContentValidation.MAX_POST_LENGTH} characters`);
     }
+
+    // Validate mention limit
+    ContentValidation.validateMentions(content);
   }
 
   public static validateCommentContent(content: string): void {
@@ -30,6 +34,15 @@ export class ContentValidation {
 
     // Remove @ symbol and ensure uniqueness
     return [...new Set(matches.map((match) => match.substring(1)))];
+  }
+
+  public static validateMentions(content: string): void {
+    const mentions = ContentValidation.extractMentions(content);
+    if (mentions.length > ContentValidation.MAX_MENTIONS_PER_POST) {
+      throw new Error(
+        `Post cannot contain more than ${ContentValidation.MAX_MENTIONS_PER_POST} mentions`
+      );
+    }
   }
 
   public static validateUsername(username: string): void {

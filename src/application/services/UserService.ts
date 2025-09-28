@@ -75,13 +75,13 @@ export class UserService {
     const user = await this.userRepository.findByUsername(username);
 
     if (!user) {
-      throw new BadRequestError('Invalid credentials');
+      throw new BadRequestError('Invalid credentials: user not found');
     }
 
     // Verify password
     const isPasswordValid = await this.authService.verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new BadRequestError('Invalid credentials');
+      throw new BadRequestError('Invalid credentials: password is incorrect');
     }
 
     // Generate tokens

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+// Mention pattern detection using latest Zod features
+const mentionPattern = /@[a-zA-Z0-9_]+/g;
+
 // Enhanced content validation with mention detection
 const contentSchema = z
   .string()
@@ -8,10 +11,17 @@ const contentSchema = z
   .transform((str) => str.trim())
   .refine((content) => content.length > 0, {
     message: 'Content cannot be empty after trimming',
-  });
-
-// Mention pattern detection using latest Zod features
-const mentionPattern = /@[a-zA-Z0-9_]+/g;
+  })
+  .refine(
+    (content) => {
+      const mentions = [...(content.match(mentionPattern) || [])].map((m) => m.substring(1));
+      const uniqueMentions = [...new Set(mentions)];
+      return uniqueMentions.length <= 10;
+    },
+    {
+      message: 'Post cannot contain more than 10 mentions',
+    }
+  );
 
 export const createPostSchema = z
   .object({
