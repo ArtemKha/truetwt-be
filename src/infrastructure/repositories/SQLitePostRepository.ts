@@ -10,6 +10,21 @@ import { UserSummary } from '@domain/entities/User';
 import { NotFoundError } from '@domain/errors/DomainError';
 import { Pagination } from '@domain/value-objects/Pagination';
 import Database from 'better-sqlite3';
+import {
+  CountResult,
+  convertDbBooleanToBoolean,
+  convertDbRowToDate,
+  DatabaseRunResult,
+  isCountResult,
+  isMentionUserDbRow,
+  isPostDbRow,
+  isPostWithUserAndEmailDbRow,
+  isPostWithUserDbRow,
+  MentionUserDbRow,
+  PostDbRow,
+  PostWithUserAndEmailDbRow,
+  PostWithUserDbRow,
+} from '../database/types';
 
 export class SQLitePostRepository implements IPostRepository {
   constructor(private db: Database.Database) {}
@@ -20,19 +35,23 @@ export class SQLitePostRepository implements IPostRepository {
       VALUES (?, ?, datetime('now'), datetime('now'), 0)
     `;
 
-    const result = this.db.prepare(query).run(postData.userId, postData.content);
+    const result = this.db
+      .prepare(query)
+      .run(postData.userId, postData.content) as DatabaseRunResult;
 
-    const post = this.db
-      .prepare('SELECT * FROM posts WHERE id = ?')
-      .get(result.lastInsertRowid) as any;
+    const postRow = this.db.prepare('SELECT * FROM posts WHERE id = ?').get(result.lastInsertRowid);
+
+    if (!isPostDbRow(postRow)) {
+      throw new Error('Failed to retrieve created post');
+    }
 
     return {
-      id: post.id,
-      userId: post.user_id,
-      content: post.content,
-      createdAt: new Date(post.created_at),
-      updatedAt: new Date(post.updated_at),
-      isDeleted: Boolean(post.is_deleted),
+      id: postRow.id,
+      userId: postRow.user_id,
+      content: postRow.content,
+      createdAt: convertDbRowToDate(postRow.created_at),
+      updatedAt: convertDbRowToDate(postRow.updated_at),
+      isDeleted: convertDbBooleanToBoolean(postRow.is_deleted),
     };
   }
 
@@ -46,8 +65,12 @@ export class SQLitePostRepository implements IPostRepository {
       WHERE p.id = ? AND p.is_deleted = 0
     `;
 
-    const post = this.db.prepare(query).get(id) as any;
-    if (!post) return null;
+    const postRow = this.db.prepare(query).get(id);
+    if (!postRow) return null;
+
+    if (!isPostWithUserAndEmailDbRow(postRow)) {
+      throw new Error('Invalid post data retrieved from database');
+    }
 
     // Get mentions for this post
     const mentionsQuery = `
@@ -57,23 +80,30 @@ export class SQLitePostRepository implements IPostRepository {
       WHERE m.post_id = ?
     `;
 
-    const mentions = this.db.prepare(mentionsQuery).all(id) as any[];
+    const mentionRows = this.db.prepare(mentionsQuery).all(id);
+
+    const mentions: UserSummary[] = mentionRows.map((row) => {
+      if (!isMentionUserDbRow(row)) {
+        throw new Error('Invalid mention data retrieved from database');
+      }
+      return {
+        id: row.id,
+        username: row.username,
+      };
+    });
 
     return {
-      id: post.id,
-      userId: post.user_id,
-      content: post.content,
-      createdAt: new Date(post.created_at),
-      updatedAt: new Date(post.updated_at),
-      isDeleted: Boolean(post.is_deleted),
+      id: postRow.id,
+      userId: postRow.user_id,
+      content: postRow.content,
+      createdAt: convertDbRowToDate(postRow.created_at),
+      updatedAt: convertDbRowToDate(postRow.updated_at),
+      isDeleted: convertDbBooleanToBoolean(postRow.is_deleted),
       user: {
-        id: post.user_id,
-        username: post.username,
+        id: postRow.user_id,
+        username: postRow.username,
       },
-      mentions: mentions.map((m) => ({
-        id: m.id,
-        username: m.username,
-      })),
+      mentions,
     };
   }
 
@@ -87,26 +117,36 @@ export class SQLitePostRepository implements IPostRepository {
       WHERE p.id = ? AND p.is_deleted = 0
     `;
 
-    const post = this.db.prepare(query).get(id) as any;
-    if (!post) return null;
+    const postRow = this.db.prepare(query).get(id);
+    if (!postRow) return null;
+
+    if (!isPostWithUserDbRow(postRow)) {
+      throw new Error('Invalid post data retrieved from database');
+    }
 
     return {
-      id: post.id,
-      userId: post.user_id,
-      content: post.content,
-      createdAt: new Date(post.created_at),
-      updatedAt: new Date(post.updated_at),
-      isDeleted: Boolean(post.is_deleted),
+      id: postRow.id,
+      userId: postRow.user_id,
+      content: postRow.content,
+      createdAt: convertDbRowToDate(postRow.created_at),
+      updatedAt: convertDbRowToDate(postRow.updated_at),
+      isDeleted: convertDbBooleanToBoolean(postRow.is_deleted),
       user: {
-        id: post.user_id,
-        username: post.username,
+        id: postRow.user_id,
+        username: postRow.username,
       },
     };
   }
 
   async findByUserId(userId: number, pagination: Pagination): Promise<PaginatedPosts> {
     const countQuery = 'SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND is_deleted = 0';
-    const total = (this.db.prepare(countQuery).get(userId) as any).count;
+    const countResult = this.db.prepare(countQuery).get(userId);
+
+    if (!isCountResult(countResult)) {
+      throw new Error('Failed to get post count');
+    }
+
+    const total = countResult.count;
 
     const query = `
       SELECT 
@@ -119,9 +159,17 @@ export class SQLitePostRepository implements IPostRepository {
       LIMIT ? OFFSET ?
     `;
 
-    const posts = this.db.prepare(query).all(userId, pagination.limit, pagination.offset) as any[];
+    const postRows = this.db.prepare(query).all(userId, pagination.limit, pagination.offset);
 
-    const postsWithMentions = await this.addMentionsToPosts(posts);
+    // Validate all rows are PostWithUserDbRow
+    const validatedPosts = postRows.map((row) => {
+      if (!isPostWithUserDbRow(row)) {
+        throw new Error('Invalid post data retrieved from database');
+      }
+      return row;
+    });
+
+    const postsWithMentions = await this.addMentionsToPosts(validatedPosts);
 
     return {
       posts: postsWithMentions,
@@ -135,7 +183,13 @@ export class SQLitePostRepository implements IPostRepository {
 
   async findAll(pagination: Pagination): Promise<PaginatedPosts> {
     const countQuery = 'SELECT COUNT(*) as count FROM posts WHERE is_deleted = 0';
-    const total = (this.db.prepare(countQuery).get() as any).count;
+    const countResult = this.db.prepare(countQuery).get();
+
+    if (!isCountResult(countResult)) {
+      throw new Error('Failed to get post count');
+    }
+
+    const total = countResult.count;
 
     const query = `
       SELECT 
@@ -148,9 +202,17 @@ export class SQLitePostRepository implements IPostRepository {
       LIMIT ? OFFSET ?
     `;
 
-    const posts = this.db.prepare(query).all(pagination.limit, pagination.offset) as any[];
+    const postRows = this.db.prepare(query).all(pagination.limit, pagination.offset);
 
-    const postsWithMentions = await this.addMentionsToPosts(posts);
+    // Validate all rows are PostWithUserDbRow
+    const validatedPosts = postRows.map((row) => {
+      if (!isPostWithUserDbRow(row)) {
+        throw new Error('Invalid post data retrieved from database');
+      }
+      return row;
+    });
+
+    const postsWithMentions = await this.addMentionsToPosts(validatedPosts);
 
     return {
       posts: postsWithMentions,
@@ -162,7 +224,7 @@ export class SQLitePostRepository implements IPostRepository {
     };
   }
 
-  private async addMentionsToPosts(posts: any[]): Promise<PostWithUserAndMentions[]> {
+  private async addMentionsToPosts(posts: PostWithUserDbRow[]): Promise<PostWithUserAndMentions[]> {
     if (posts.length === 0) return [];
 
     const postIds = posts.map((p) => p.id);
@@ -175,28 +237,42 @@ export class SQLitePostRepository implements IPostRepository {
       WHERE m.post_id IN (${placeholders})
     `;
 
-    const mentions = this.db.prepare(mentionsQuery).all(...postIds) as any[];
-    const mentionsByPost = mentions.reduce(
-      (acc, mention) => {
-        if (!acc[mention.post_id]) {
-          acc[mention.post_id] = [];
-        }
-        acc[mention.post_id].push({
-          id: mention.id,
-          username: mention.username,
-        });
-        return acc;
-      },
-      {} as Record<number, UserSummary[]>
-    );
+    const mentionRows = this.db.prepare(mentionsQuery).all(...postIds);
+
+    // Validate mention rows and build mentions map
+    const mentionsByPost: Record<number, UserSummary[]> = {};
+
+    mentionRows.forEach((row) => {
+      // Validate mention row structure
+      if (
+        !row ||
+        typeof row !== 'object' ||
+        !('post_id' in row) ||
+        !('id' in row) ||
+        !('username' in row)
+      ) {
+        throw new Error('Invalid mention data retrieved from database');
+      }
+
+      const mentionRow = row as { post_id: number; id: number; username: string };
+
+      if (!mentionsByPost[mentionRow.post_id]) {
+        mentionsByPost[mentionRow.post_id] = [];
+      }
+
+      mentionsByPost[mentionRow.post_id].push({
+        id: mentionRow.id,
+        username: mentionRow.username,
+      });
+    });
 
     return posts.map((post) => ({
       id: post.id,
       userId: post.user_id,
       content: post.content,
-      createdAt: new Date(post.created_at),
-      updatedAt: new Date(post.updated_at),
-      isDeleted: Boolean(post.is_deleted),
+      createdAt: convertDbRowToDate(post.created_at),
+      updatedAt: convertDbRowToDate(post.updated_at),
+      isDeleted: convertDbBooleanToBoolean(post.is_deleted),
       user: {
         id: post.user_id,
         username: post.username,

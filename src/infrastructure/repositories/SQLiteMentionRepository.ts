@@ -2,6 +2,12 @@ import { IMentionRepository } from '@application/ports/repositories/IMentionRepo
 import { CreateMentionData, Mention } from '@domain/entities/Mention';
 import { UserSummary } from '@domain/entities/User';
 import Database from 'better-sqlite3';
+import {
+  convertDbRowToDate,
+  DatabaseRunResult,
+  isMentionDbRow,
+  MentionDbRow,
+} from '../database/types';
 
 export class SQLiteMentionRepository implements IMentionRepository {
   constructor(private db: Database.Database) {}
@@ -12,17 +18,23 @@ export class SQLiteMentionRepository implements IMentionRepository {
       VALUES (?, ?, datetime('now'))
     `;
 
-    const result = this.db.prepare(query).run(mentionData.postId, mentionData.mentionedUserId);
+    const result = this.db
+      .prepare(query)
+      .run(mentionData.postId, mentionData.mentionedUserId) as DatabaseRunResult;
 
-    const mention = this.db
+    const mentionRow = this.db
       .prepare('SELECT * FROM mentions WHERE id = ?')
-      .get(result.lastInsertRowid) as any;
+      .get(result.lastInsertRowid);
+
+    if (!isMentionDbRow(mentionRow)) {
+      throw new Error('Failed to retrieve created mention');
+    }
 
     return {
-      id: mention.id,
-      postId: mention.post_id,
-      mentionedUserId: mention.mentioned_user_id,
-      createdAt: new Date(mention.created_at),
+      id: mentionRow.id,
+      postId: mentionRow.post_id,
+      mentionedUserId: mentionRow.mentioned_user_id,
+      createdAt: convertDbRowToDate(mentionRow.created_at),
     };
   }
 

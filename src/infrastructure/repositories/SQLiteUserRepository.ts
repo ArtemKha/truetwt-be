@@ -3,6 +3,14 @@ import { CreateUserData, UpdateUserData, User, UserProfile } from '@domain/entit
 import { ConflictError, NotFoundError } from '@domain/errors/DomainError';
 import { Pagination, PaginationResult } from '@domain/value-objects/Pagination';
 import Database from 'better-sqlite3';
+import {
+  CountResult,
+  convertDbRowToDate,
+  DatabaseRunResult,
+  isCountResult,
+  isUserDbRow,
+  UserDbRow,
+} from '../database/types';
 
 export class SQLiteUserRepository implements IUserRepository {
   constructor(private db: Database.Database) {}
@@ -16,19 +24,23 @@ export class SQLiteUserRepository implements IUserRepository {
     try {
       const result = this.db
         .prepare(query)
-        .run(userData.username, userData.email, userData.passwordHash);
+        .run(userData.username, userData.email, userData.passwordHash) as DatabaseRunResult;
 
-      const user = this.db
+      const userRow = this.db
         .prepare('SELECT * FROM users WHERE id = ?')
-        .get(result.lastInsertRowid) as any;
+        .get(result.lastInsertRowid);
+
+      if (!isUserDbRow(userRow)) {
+        throw new Error('Failed to retrieve created user');
+      }
 
       return {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        passwordHash: user.password_hash,
-        createdAt: new Date(user.created_at),
-        updatedAt: new Date(user.updated_at),
+        id: userRow.id,
+        username: userRow.username,
+        email: userRow.email,
+        passwordHash: userRow.password_hash,
+        createdAt: convertDbRowToDate(userRow.created_at),
+        updatedAt: convertDbRowToDate(userRow.updated_at),
       };
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -40,49 +52,61 @@ export class SQLiteUserRepository implements IUserRepository {
 
   async findById(id: number): Promise<User | null> {
     const query = 'SELECT * FROM users WHERE id = ?';
-    const user = this.db.prepare(query).get(id) as any;
+    const userRow = this.db.prepare(query).get(id);
 
-    if (!user) return null;
+    if (!userRow) return null;
+
+    if (!isUserDbRow(userRow)) {
+      throw new Error('Invalid user data retrieved from database');
+    }
 
     return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      passwordHash: user.password_hash,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at),
+      id: userRow.id,
+      username: userRow.username,
+      email: userRow.email,
+      passwordHash: userRow.password_hash,
+      createdAt: convertDbRowToDate(userRow.created_at),
+      updatedAt: convertDbRowToDate(userRow.updated_at),
     };
   }
 
   async findByUsername(username: string): Promise<User | null> {
     const query = 'SELECT * FROM users WHERE username = ?';
-    const user = this.db.prepare(query).get(username) as any;
+    const userRow = this.db.prepare(query).get(username);
 
-    if (!user) return null;
+    if (!userRow) return null;
+
+    if (!isUserDbRow(userRow)) {
+      throw new Error('Invalid user data retrieved from database');
+    }
 
     return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      passwordHash: user.password_hash,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at),
+      id: userRow.id,
+      username: userRow.username,
+      email: userRow.email,
+      passwordHash: userRow.password_hash,
+      createdAt: convertDbRowToDate(userRow.created_at),
+      updatedAt: convertDbRowToDate(userRow.updated_at),
     };
   }
 
   async findByEmail(email: string): Promise<User | null> {
     const query = 'SELECT * FROM users WHERE email = ?';
-    const user = this.db.prepare(query).get(email) as any;
+    const userRow = this.db.prepare(query).get(email);
 
-    if (!user) return null;
+    if (!userRow) return null;
+
+    if (!isUserDbRow(userRow)) {
+      throw new Error('Invalid user data retrieved from database');
+    }
 
     return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      passwordHash: user.password_hash,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at),
+      id: userRow.id,
+      username: userRow.username,
+      email: userRow.email,
+      passwordHash: userRow.password_hash,
+      createdAt: convertDbRowToDate(userRow.created_at),
+      updatedAt: convertDbRowToDate(userRow.updated_at),
     };
   }
 
@@ -109,7 +133,7 @@ export class SQLiteUserRepository implements IUserRepository {
     const query = `UPDATE users SET ${setClause.join(', ')} WHERE id = ?`;
 
     try {
-      const result = this.db.prepare(query).run(...values);
+      const result = this.db.prepare(query).run(...values) as DatabaseRunResult;
 
       if (result.changes === 0) {
         throw new NotFoundError('User not found');
@@ -131,7 +155,7 @@ export class SQLiteUserRepository implements IUserRepository {
 
   async delete(id: number): Promise<void> {
     const query = 'DELETE FROM users WHERE id = ?';
-    const result = this.db.prepare(query).run(id);
+    const result = this.db.prepare(query).run(id) as DatabaseRunResult;
 
     if (result.changes === 0) {
       throw new NotFoundError('User not found');
@@ -142,7 +166,13 @@ export class SQLiteUserRepository implements IUserRepository {
     pagination: Pagination
   ): Promise<{ users: UserProfile[]; pagination: PaginationResult }> {
     const countQuery = 'SELECT COUNT(*) as count FROM users';
-    const total = (this.db.prepare(countQuery).get() as any).count;
+    const countResult = this.db.prepare(countQuery).get();
+
+    if (!isCountResult(countResult)) {
+      throw new Error('Failed to get user count');
+    }
+
+    const total = countResult.count;
 
     const query = `
       SELECT id, username, email, created_at, updated_at 
@@ -151,15 +181,35 @@ export class SQLiteUserRepository implements IUserRepository {
       LIMIT ? OFFSET ?
     `;
 
-    const users = this.db.prepare(query).all(pagination.limit, pagination.offset) as any[];
+    const userRows = this.db.prepare(query).all(pagination.limit, pagination.offset);
 
-    const userProfiles: UserProfile[] = users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at),
-    }));
+    const userProfiles: UserProfile[] = userRows.map((row) => {
+      // Validate that this is a partial user row (without password_hash)
+      if (
+        !row ||
+        typeof row !== 'object' ||
+        !('id' in row) ||
+        !('username' in row) ||
+        !('email' in row) ||
+        !('created_at' in row) ||
+        !('updated_at' in row)
+      ) {
+        throw new Error('Invalid user profile data retrieved from database');
+      }
+
+      const userRow = row as Pick<
+        UserDbRow,
+        'id' | 'username' | 'email' | 'created_at' | 'updated_at'
+      >;
+
+      return {
+        id: userRow.id,
+        username: userRow.username,
+        email: userRow.email,
+        createdAt: convertDbRowToDate(userRow.created_at),
+        updatedAt: convertDbRowToDate(userRow.updated_at),
+      };
+    });
 
     return {
       users: userProfiles,

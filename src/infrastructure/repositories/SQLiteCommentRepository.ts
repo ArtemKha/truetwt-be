@@ -8,6 +8,17 @@ import {
 import { NotFoundError } from '@domain/errors/DomainError';
 import { Pagination } from '@domain/value-objects/Pagination';
 import Database from 'better-sqlite3';
+import {
+  CommentDbRow,
+  CommentWithUserDbRow,
+  CountResult,
+  convertDbBooleanToBoolean,
+  convertDbRowToDate,
+  DatabaseRunResult,
+  isCommentDbRow,
+  isCommentWithUserDbRow,
+  isCountResult,
+} from '../database/types';
 
 export class SQLiteCommentRepository implements ICommentRepository {
   constructor(private db: Database.Database) {}
@@ -20,20 +31,24 @@ export class SQLiteCommentRepository implements ICommentRepository {
 
     const result = this.db
       .prepare(query)
-      .run(commentData.postId, commentData.userId, commentData.content);
+      .run(commentData.postId, commentData.userId, commentData.content) as DatabaseRunResult;
 
-    const comment = this.db
+    const commentRow = this.db
       .prepare('SELECT * FROM comments WHERE id = ?')
-      .get(result.lastInsertRowid) as any;
+      .get(result.lastInsertRowid);
+
+    if (!isCommentDbRow(commentRow)) {
+      throw new Error('Failed to retrieve created comment');
+    }
 
     return {
-      id: comment.id,
-      postId: comment.post_id,
-      userId: comment.user_id,
-      content: comment.content,
-      createdAt: new Date(comment.created_at),
-      updatedAt: new Date(comment.updated_at),
-      isDeleted: Boolean(comment.is_deleted),
+      id: commentRow.id,
+      postId: commentRow.post_id,
+      userId: commentRow.user_id,
+      content: commentRow.content,
+      createdAt: convertDbRowToDate(commentRow.created_at),
+      updatedAt: convertDbRowToDate(commentRow.updated_at),
+      isDeleted: convertDbBooleanToBoolean(commentRow.is_deleted),
     };
   }
 
@@ -47,20 +62,24 @@ export class SQLiteCommentRepository implements ICommentRepository {
       WHERE c.id = ? AND c.is_deleted = 0
     `;
 
-    const comment = this.db.prepare(query).get(id) as any;
-    if (!comment) return null;
+    const commentRow = this.db.prepare(query).get(id);
+    if (!commentRow) return null;
+
+    if (!isCommentWithUserDbRow(commentRow)) {
+      throw new Error('Invalid comment data retrieved from database');
+    }
 
     return {
-      id: comment.id,
-      postId: comment.post_id,
-      userId: comment.user_id,
-      content: comment.content,
-      createdAt: new Date(comment.created_at),
-      updatedAt: new Date(comment.updated_at),
-      isDeleted: Boolean(comment.is_deleted),
+      id: commentRow.id,
+      postId: commentRow.post_id,
+      userId: commentRow.user_id,
+      content: commentRow.content,
+      createdAt: convertDbRowToDate(commentRow.created_at),
+      updatedAt: convertDbRowToDate(commentRow.updated_at),
+      isDeleted: convertDbBooleanToBoolean(commentRow.is_deleted),
       user: {
-        id: comment.user_id,
-        username: comment.username,
+        id: commentRow.user_id,
+        username: commentRow.username,
       },
     };
   }
