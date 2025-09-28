@@ -26,12 +26,6 @@ export default defineConfig({
         singleThread: false,
       },
     },
-    // Enhanced watch mode
-    watchTriggerPatterns: [
-      '**/package.json/**',
-      '**/vitest.config.*/**',
-      '**/biome.json/**'
-    ],
     // Use test-specific TypeScript config
     typecheck: {
       tsconfig: './tsconfig.test.json',

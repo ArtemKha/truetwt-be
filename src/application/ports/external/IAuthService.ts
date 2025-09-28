@@ -16,6 +16,9 @@ export interface IAuthService {
   generateTokens(payload: Omit<TokenPayload, 'iat' | 'exp'>): Promise<TokenPair>;
   verifyAccessToken(token: string): Promise<TokenPayload>;
   verifyRefreshToken(token: string): Promise<TokenPayload>;
-  generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): Promise<string>;
+  generateAccessToken(
+    payload: Omit<TokenPayload, 'iat' | 'exp'>,
+    customExpiry?: string
+  ): Promise<string>;
   extractTokenFromHeader(authHeader: string): string | null;
 }

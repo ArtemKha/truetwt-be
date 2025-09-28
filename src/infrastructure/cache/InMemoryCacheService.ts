@@ -80,7 +80,7 @@ export class InMemoryCacheService implements ICacheService {
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     try {
       const cacheItem: CacheItem = {
-        value,
+        value: String(value), // Convert to string to handle undefined/null
         expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : undefined,
       };
 

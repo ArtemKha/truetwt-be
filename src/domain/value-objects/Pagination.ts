@@ -8,6 +8,7 @@ export interface PaginationResult {
   total: number;
   page: number;
   limit: number;
+  totalPages: number;
   hasNext: boolean;
   hasPrev: boolean;
 }
@@ -36,6 +37,7 @@ export class Pagination {
       total,
       page: this.page,
       limit: this.limit,
+      totalPages,
       hasNext: this.page < totalPages,
       hasPrev: this.page > 1,
     };

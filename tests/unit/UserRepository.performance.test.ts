@@ -1,7 +1,7 @@
-import { CreateUserData } from '@domain/entities/User';
-import { SQLiteUserRepository } from '@infrastructure/repositories/SQLiteUserRepository';
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CreateUserData } from '../../src/domain/entities/User';
+import { SQLiteUserRepository } from '../../src/infrastructure/repositories/SQLiteUserRepository';
 
 describe('UserRepository Performance Tests', () => {
   let db: Database.Database;

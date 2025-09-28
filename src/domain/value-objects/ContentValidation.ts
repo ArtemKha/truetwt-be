@@ -82,7 +82,7 @@ export class ContentValidation {
     const hasLowercase = /[a-z]/.test(password);
     const hasUppercase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[@$!%*?&]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
     if (!hasLowercase) {
       throw new Error('Password must contain at least one lowercase letter');
@@ -94,7 +94,7 @@ export class ContentValidation {
       throw new Error('Password must contain at least one number');
     }
     if (!hasSpecialChar) {
-      throw new Error('Password must contain at least one special character (@$!%*?&)');
+      throw new Error('Password must contain at least one special character');
     }
   }
 }

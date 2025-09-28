@@ -60,10 +60,13 @@ export class JWTAuthService implements IAuthService {
     }
   }
 
-  async generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): Promise<string> {
+  async generateAccessToken(
+    payload: Omit<TokenPayload, 'iat' | 'exp'>,
+    customExpiry?: string
+  ): Promise<string> {
     try {
       const accessTokenOptions: SignOptions = {
-        expiresIn: this.accessTokenExpiry as StringValue,
+        expiresIn: (customExpiry || this.accessTokenExpiry) as StringValue,
         issuer: 'truetweet',
         subject: 'access',
       };
@@ -130,11 +133,20 @@ export class JWTAuthService implements IAuthService {
       return null;
     }
 
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    // Trim whitespace and split
+    const trimmed = authHeader.trim();
+    const parts = trimmed.split(/\s+/);
+
+    if (parts.length !== 2) {
       return null;
     }
 
-    return parts[1];
+    // Check if first part is 'Bearer' (case-insensitive)
+    if (parts[0].toLowerCase() !== 'bearer') {
+      return null;
+    }
+
+    const token = parts[1].trim();
+    return token || null;
   }
 }

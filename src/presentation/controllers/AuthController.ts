@@ -15,6 +15,7 @@ export class AuthController {
 
     res.status(201).json({
       success: true,
+      message: 'User registered successfully',
       data: {
         user: result.user,
         tokens: result.tokens,
@@ -31,6 +32,7 @@ export class AuthController {
 
     res.json({
       success: true,
+      message: 'Login successful',
       data: {
         user: result.user,
         tokens: result.tokens,
@@ -45,6 +47,7 @@ export class AuthController {
 
     res.json({
       success: true,
+      message: 'Token refreshed successfully',
       data: result,
     });
   }
@@ -57,7 +60,7 @@ export class AuthController {
 
     res.json({
       success: true,
-      message: 'Logged out successfully',
+      message: 'Logout successful',
     });
   }
 

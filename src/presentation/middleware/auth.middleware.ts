@@ -22,13 +22,17 @@ export function createAuthMiddleware(authService: IAuthService) {
       const authHeader = req.headers.authorization;
 
       if (!authHeader) {
-        throw new UnauthorizedError('Authorization header is required');
+        const error = new UnauthorizedError('Authentication required');
+        (error as any).code = 'AUTHENTICATION_REQUIRED';
+        throw error;
       }
 
       const token = authService.extractTokenFromHeader(authHeader);
 
       if (!token) {
-        throw new UnauthorizedError('Invalid authorization header format');
+        const error = new UnauthorizedError('Invalid token format');
+        (error as any).code = 'INVALID_TOKEN_FORMAT';
+        throw error;
       }
 
       const payload = await authService.verifyAccessToken(token);
@@ -43,6 +47,20 @@ export function createAuthMiddleware(authService: IAuthService) {
 
       next();
     } catch (error) {
+      // Handle JWT verification errors
+      if (error instanceof UnauthorizedError) {
+        // Map specific JWT errors to expected codes
+        if (
+          error.message.includes('expired') ||
+          error.message.includes('Invalid access token') ||
+          error.message.includes('verification failed')
+        ) {
+          const mappedError = new UnauthorizedError('Invalid or expired token');
+          (mappedError as any).code = 'INVALID_TOKEN';
+          next(mappedError);
+          return;
+        }
+      }
       next(error);
     }
   };

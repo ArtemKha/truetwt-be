@@ -1,11 +1,11 @@
-import { PostService } from '@application/services/PostService';
-import { CreateUserData } from '@domain/entities/User';
-import { InMemoryCacheService } from '@infrastructure/cache/InMemoryCacheService';
-import { SQLiteMentionRepository } from '@infrastructure/repositories/SQLiteMentionRepository';
-import { SQLitePostRepository } from '@infrastructure/repositories/SQLitePostRepository';
-import { SQLiteUserRepository } from '@infrastructure/repositories/SQLiteUserRepository';
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PostService } from '../../src/application/services/PostService';
+import { CreateUserData } from '../../src/domain/entities/User';
+import { InMemoryCacheService } from '../../src/infrastructure/cache/InMemoryCacheService';
+import { SQLiteMentionRepository } from '../../src/infrastructure/repositories/SQLiteMentionRepository';
+import { SQLitePostRepository } from '../../src/infrastructure/repositories/SQLitePostRepository';
+import { SQLiteUserRepository } from '../../src/infrastructure/repositories/SQLiteUserRepository';
 
 describe('PostService Performance Tests', () => {
   let db: Database.Database;
@@ -61,6 +61,7 @@ describe('PostService Performance Tests', () => {
       users.push({
         username: `testuser${i}`,
         email: `testuser${i}@example.com`,
+        password: 'password',
         passwordHash: 'hashedpassword',
       });
     }

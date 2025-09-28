@@ -171,13 +171,10 @@ export class SQLitePostRepository implements IPostRepository {
 
     const postsWithMentions = await this.addMentionsToPosts(validatedPosts);
 
+    const paginationResult = pagination.createResult(total);
     return {
       posts: postsWithMentions,
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      hasNext: pagination.page * pagination.limit < total,
-      hasPrev: pagination.page > 1,
+      ...paginationResult,
     };
   }
 
@@ -214,13 +211,10 @@ export class SQLitePostRepository implements IPostRepository {
 
     const postsWithMentions = await this.addMentionsToPosts(validatedPosts);
 
+    const paginationResult = pagination.createResult(total);
     return {
       posts: postsWithMentions,
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      hasNext: pagination.page * pagination.limit < total,
-      hasPrev: pagination.page > 1,
+      ...paginationResult,
     };
   }
 
