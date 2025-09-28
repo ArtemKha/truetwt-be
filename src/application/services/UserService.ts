@@ -1,10 +1,10 @@
 import { IAuthService } from '@application/ports/external/IAuthService';
 import { IUserRepository } from '@application/ports/repositories/IUserRepository';
-import { CreateUserData, UpdateUserData, User, UserProfile } from '@domain/entities/User';
+import { CreateUserData, UpdateUserData, UserProfile } from '@domain/entities/User';
 import {
+  BadRequestError,
   ConflictError,
   NotFoundError,
-  UnauthorizedError,
   ValidationError,
 } from '@domain/errors/DomainError';
 import { ContentValidation } from '@domain/value-objects/ContentValidation';
@@ -75,13 +75,13 @@ export class UserService {
     const user = await this.userRepository.findByUsername(username);
 
     if (!user) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new BadRequestError('Invalid credentials');
     }
 
     // Verify password
     const isPasswordValid = await this.authService.verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new BadRequestError('Invalid credentials');
     }
 
     // Generate tokens
@@ -200,7 +200,7 @@ export class UserService {
     };
   }
 
-  async getUserStats(userId: number): Promise<{ totalPosts: number; totalComments: number }> {
+  async getUserStats(_userId: number): Promise<{ totalPosts: number; totalComments: number }> {
     // Note: This would require additional methods in repositories or a dedicated stats service
     // For now, returning default values - implement when post/comment counts are needed
     return {

@@ -78,7 +78,7 @@ export function createAuthRoutes(
    *     responses:
    *       200:
    *         description: Login successful
-   *       401:
+   *       400:
    *         description: Invalid credentials
    */
   router.post(
