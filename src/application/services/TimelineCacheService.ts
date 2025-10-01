@@ -10,7 +10,7 @@ export class TimelineCacheService {
     private postRepository: IPostRepository
   ) {}
 
-  async warmupCache(maxPosts = 1000): Promise<{ processed: number; errors: number }> {
+  async warmupCache(maxPosts = 100): Promise<{ processed: number; errors: number }> {
     logger.info('Starting timeline cache warmup', { maxPosts });
 
     try {

@@ -2,6 +2,7 @@
 
 import { Container } from '@shared/container/Container';
 import { logger } from '@shared/utils/logger';
+import bcrypt from 'bcryptjs';
 import Database from 'better-sqlite3';
 
 interface SeedUser {
@@ -372,13 +373,8 @@ class DatabaseSeeder {
   }
 
   private hashPasswordSync(password: string): string {
-    // Simple synchronous hash for seeding - in production this should use bcrypt
-    // For seeding purposes, we'll use a simple hash
-    const crypto = require('crypto');
-    return crypto
-      .createHash('sha256')
-      .update(password + 'seed_salt')
-      .digest('hex');
+    const saltRounds = 12;
+    return bcrypt.hashSync(password, saltRounds);
   }
 
   private seedPostsSync(): void {
@@ -518,6 +514,8 @@ class DatabaseSeeder {
       logger.error('Database seeding failed - all changes have been rolled back:', error);
       throw error;
     } finally {
+      const timelineCacheService = this.container.get('timelineCacheService');
+      await timelineCacheService.warmupCache();
       await this.container.cleanup();
     }
   }
