@@ -86,4 +86,12 @@ export class PostController {
       data: { stats },
     });
   }
+
+  // TODO: CACHE STALENESS FIX - Missing updatePost controller method
+  // Need to implement updatePost method that:
+  // 1. Extracts postId from params and content from body
+  // 2. Gets userId from authenticated user
+  // 3. Calls postService.updatePost with proper cache invalidation
+  // 4. Returns updated post data
+  // async updatePost(req: Request, res: Response) { ... }
 }

@@ -174,4 +174,14 @@ export class TimelineCacheService {
       };
     }
   }
+
+  // TODO: CACHE STALENESS FIX - Add proactive cache monitoring
+  // Implement methods to detect and prevent cache staleness:
+  // 1. Periodic consistency checks between cache and database
+  // 2. Automatic cache repair when inconsistencies detected
+  // 3. Cache warming strategies for high-traffic periods
+  // 4. Metrics collection for cache hit/miss rates
+  // 5. Alerting when cache becomes significantly stale
+  // async scheduleConsistencyChecks(intervalMinutes: number): Promise<void>
+  // async repairInconsistencies(): Promise<{ fixed: number; errors: number }>
 }

@@ -79,7 +79,9 @@ export class PostService {
       await this.cacheService.addToTimeline(timelinePost);
     } catch (error) {
       logger.warn('Failed to add post to timeline cache', { error, postId: post.id });
-      // Continue without cache - fallback to database
+      // TODO: CACHE STALENESS FIX - Cache failure during post creation
+      // Consider implementing retry logic or marking cache as inconsistent
+      // for later reconciliation. Current behavior leaves cache incomplete.
     }
 
     logger.info('Post created successfully', {
@@ -111,6 +113,17 @@ export class PostService {
 
     return post;
   }
+
+  // TODO: CACHE STALENESS FIX - Missing updatePost method
+  // Need to implement updatePost method that:
+  // 1. Validates user ownership
+  // 2. Gets old post data for cache removal
+  // 3. Updates post in database
+  // 4. Removes old version from timeline cache
+  // 5. Adds updated version to timeline cache
+  // 6. Handles mention changes
+  // 7. Provides proper error handling for cache failures
+  // async updatePost(postId: number, userId: number, content: string): Promise<PostWithUserAndMentions>
 
   async getUserPosts(userId: number, page = 1, limit = 20): Promise<PaginatedPosts> {
     // Verify user exists
@@ -149,7 +162,9 @@ export class PostService {
         await this.cacheService.removeFromTimeline(postId, post.createdAt.getTime());
       } catch (error) {
         logger.warn('Failed to remove post from timeline cache', { error, postId });
-        // Continue without cache error - data is already deleted from database
+        // TODO: CACHE STALENESS FIX - Cache removal failure during post deletion
+        // Deleted posts may still appear in timeline until cache refresh.
+        // Consider implementing retry logic or cache consistency checks.
       }
     }
 

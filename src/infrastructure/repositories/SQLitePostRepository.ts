@@ -276,6 +276,14 @@ export class SQLitePostRepository implements IPostRepository {
   }
 
   async update(id: number, content: string): Promise<Post> {
+    // TODO: CACHE STALENESS FIX - This method updates posts but doesn't invalidate cache
+    // Need to:
+    // 1. Get old post data before update (for cache removal by timestamp)
+    // 2. Update database
+    // 3. Remove old version from timeline cache
+    // 4. Add updated version to timeline cache
+    // 5. Handle cache operation failures gracefully
+
     const query = `
       UPDATE posts 
       SET content = ?, updated_at = datetime('now') 

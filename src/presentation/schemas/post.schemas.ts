@@ -32,6 +32,13 @@ export const createPostSchema = z
     mentions: [...(data.content.match(mentionPattern) || [])].map((m) => m.substring(1)),
   }));
 
+// TODO: CACHE STALENESS FIX - Missing updatePostSchema for PUT endpoint
+// Need to create schema for post updates that validates:
+// - Content with same rules as createPostSchema
+// - Optional fields for partial updates
+// - Mention detection and validation
+// export const updatePostSchema = z.object({ content: contentSchema });
+
 // Enhanced pagination with better validation
 const paginationSchema = z.object({
   page: z

@@ -128,6 +128,14 @@ export function createPostRoutes(
     asyncHandler(postController.getPost.bind(postController))
   );
 
+  // TODO: CACHE STALENESS FIX - Missing PUT endpoint for post updates
+  // Need to add PUT /api/posts/:id endpoint that:
+  // 1. Validates user ownership
+  // 2. Updates post content
+  // 3. Handles cache invalidation properly
+  // router.put('/:id', requireAuth, validateParams(postParamsSchema),
+  //           validateBody(updatePostSchema), asyncHandler(postController.updatePost.bind(postController)));
+
   /**
    * @swagger
    * /api/posts/{id}:

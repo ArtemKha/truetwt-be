@@ -163,6 +163,16 @@ export class UserService {
     // Update user
     const updatedUser = await this.userRepository.update(userId, updateData);
 
+    // TODO: CACHE STALENESS FIX - Username changes don't invalidate timeline cache
+    // When username changes, timeline cache still shows old username for all user's posts.
+    // Need to either:
+    // 1. Refresh entire timeline cache (simple but expensive)
+    // 2. Update specific user posts in cache (complex but efficient)
+    // 3. Implement cache versioning/tagging for user data
+    if (updateData.username && updateData.username !== existingUser.username) {
+      // Cache invalidation needed here
+    }
+
     logger.info('User profile updated', {
       userId,
       updatedFields: Object.keys(updateData),

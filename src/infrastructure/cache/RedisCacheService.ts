@@ -187,4 +187,18 @@ export class RedisCacheService implements ICacheService {
       return false;
     }
   }
+
+  // TODO: CACHE STALENESS FIX - Add retry logic for cache operations
+  // Implement withRetry method to handle temporary Redis failures:
+  // - Exponential backoff for retries
+  // - Maximum retry attempts configuration
+  // - Graceful degradation when cache is unavailable
+  // private async withRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T>
+
+  // TODO: CACHE STALENESS FIX - Add cache consistency validation
+  // Implement methods to detect and fix cache inconsistencies:
+  // - Compare cache count vs database count
+  // - Validate specific posts exist in both cache and database
+  // - Auto-repair inconsistencies when detected
+  // async validateConsistency(): Promise<{ inconsistencies: number; fixed: number }>
 }
